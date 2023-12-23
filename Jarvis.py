@@ -1,103 +1,90 @@
-import pyttsx3
-import datetime
 import speech_recognition as sr
-import wikipedia
+import win32com.client
 import webbrowser
+import wikipedia
+import datetime
+import pyaudio
+import openai
 import os
 
-engine = pyttsx3.init('sapi5')
-voices = engine.getProperty('voices')
-# print(voices[0].id)
-engine.setProperty('voice', voices[0].id)
-
-def speak(audio):
-    engine.say(audio)
-    engine.runAndWait()
+speaker = win32com.client.Dispatch("SAPI.SpVoice")
 
 # function for greeting user
 def wishMe():
     hour = int(datetime.datetime.now().hour)
-    print(hour)
-    if (hour ==0 and hour<12):
-        speak("Good morning")
+    # print(hour)
+    if (hour > 0 and hour<12):
+        speaker.Speak("Good morning")
 
     elif(hour<=16 and hour > 12):
-        speak("Good Afternoon")
+        speaker.Speak("Good Afternoon")
     
     elif(hour<=19 and hour> 16):
-        speak("Good Evening")
+        speaker.Speak("Good Evening")
 
     else:
-        speak("Good Night")
-
-    speak("Hii, I am Jarvis Sir. How can I help you?")
+        speaker.Speak("Good Night")
 
 
-# function for listening & recognizing orders
 def takeCommand():
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Listening...")
         r.pause_threshold = 1
         audio = r.listen(source)
+        try:
+            print("Recognizing")
+            query = r.recognize_google(audio, language="en-in")
+            print((f"User Said : {query}"))
+            return query
+        except:
+            return "Sorry, some error occured."
 
-    try:
-        print("Recognizing...")
-        query = r.recognize_google(audio, language= "en-in")
-        print(f"User said {query}")
 
-    except Exception as e:
-        speak("Sorry I didn't recognize what you say. Please try again")
-        return "None"
-
-    return query
-
-if __name__ == "__main__":
+if __name__=='__main__':
     wishMe()
-    while True:
-    # if True:
-        query = takeCommand().lower()
-
-        # for searching in wikipedia
-        if 'wikipedia' in query:
-            speak("Searching wikipedia")
-            query = query.replace("wikipedia", "")
-            results = wikipedia.summary(query, sentences=2)
-            speak("According to wikipedia")
-            print(results)
-            speak(results)
-
-
-        # searching anything on google
-        elif 'google' in query:
-            speak("Searching on google")
-            webbrowser.open(f"{query}_google.com")
-            
-
-        # for playing video on youtube
-        elif 'play video' in query:
-            speak("Searching on google")
-            webbrowser.open(f"{query} youtube.com")
-
-
-        # for opening geeksforgeeks website
-        elif 'open gfg' in query:
-            webbrowser.open("geeksforgeeks.com")
-
-
+    speaker.Speak("Hello I am Jarvis A.I. Sir, How can I help You?")
+    count = 0
+    while (count < 10):
+        print("Listening...")
+        query = takeCommand()
+        sites = [["youtube", "https://youtube.com"], ["DSA Profile","https://leetcode.com/kanganeabhishek2002/"],
+                 ["instagram", "https://instagram.com"], ["linkedin","https://www.linkedin.com/in/abhishek-kangane-4ba933242/"],
+                 ["geeks for geeks","https://auth.geeksforgeeks.org/user/abhikangane1392"],]
+        for site in sites:
+            if f"open {site[0]}".lower() in query.lower():
+                speaker.Speak(f"Opening {site[0]} Sir...")
+                webbrowser.open(site[1])
+        
         # playing song from local directory
-        elif 'play music' in query:
+        if 'play music' in query.lower():
+            speaker.Speak("Playing music from local directory")
             music = "C:\\Users\\Abhishek Kangane\\Music\\Love_Mushups"
             songs = os.listdir(music)
-            # fo printing or listing songs
-            # print(songs)
             os.startfile(os.path.join(music , songs[0]))
 
-        # for telling the current time
-        elif "the time" in query:
-            strTime= datetime.datetime.now().strftime("%H:%M:%S")
-            speak(f"The time is: {strTime}")
+        # for searching in wikipedia
+        elif 'wikipedia' in query.lower():
+            speaker.Speak("Searching wikipedia")
+            query = query.replace("wikipedia", "")
+            results = wikipedia.summary(query, sentences=2)
+            speaker.Speak("According to wikipedia")
+            print(results)
+            speaker.Speak(results)
 
-        else:
-            print("Stopping...")
-            break
+        # searching anything on google
+        elif 'google' in query.lower():
+            speaker.Speak("Searching on google")
+            webbrowser.open(f"{query}.com")
+
+        # for telling the current time
+        elif "the time" in query.lower():
+            hour = datetime.datetime.now().strftime("%H")
+            min = datetime.datetime.now().strftime("%M")
+            speaker.Speak(f"Sir the time is {hour} hour {min} minutes")
+
+        # opening eclipse
+        elif "open eclipse" in query.lower():
+            eclipsePath = "C:\\Users\\Abhishek Kangane\\eclipse\\java-2022-063\\eclipse\\"
+            os.startfile(eclipsePath)
+
+        count = count+1
